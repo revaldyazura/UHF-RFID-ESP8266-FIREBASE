@@ -21,7 +21,8 @@
 
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org");
+// Define the NTP Client with a time offset (7 hours in seconds)
+NTPClient timeClient(ntpUDP, "pool.ntp.org"); // 25200 seconds = 7 hours
 
 // Define Firebase Data object, Firebase authentication, and configuration
 FirebaseData fbdo;
@@ -34,7 +35,7 @@ String prevTagId; // String to store the previous tag ID
 // Function to convert epoch time to timestamp string
 String epochToTimestamp(unsigned long epochTime) {
   tmElements_t tm;
-  breakTime(epochTime + 7 * 3600, tm); // Adjust time for GMT+7
+  breakTime(epochTime, tm);
   char timestamp[21];
   sprintf(timestamp, "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.Year + 1970, tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second);
   return String(timestamp);
@@ -51,7 +52,7 @@ String readTag() {
   sprintf(hex, "%02X", data);
   currentTag += hex;
 
-  if (currentTag.length() == 16) {
+  if (currentTag.length() == 36) {
     previousTag = currentTag;
     currentTag = ""; // Reset for the next tag
     return previousTag;
@@ -64,7 +65,7 @@ void sentToFirestore(String tagId, String timestamp) {
   // Create a FirebaseJson object for storing data
   FirebaseJson content;
   // Define the path to the Firestore document
-  String documentPath = "products/" + tagId;
+  String documentPath = "tags/" + tagId;
   // Set the 'TagID' and 'timestamp' fields in the FirebaseJson object
   content.set("fields/TagID/stringValue", tagId);
   content.set("fields/timeStamp/timestampValue", timestamp); // RFC3339 UTC "Zulu" format
